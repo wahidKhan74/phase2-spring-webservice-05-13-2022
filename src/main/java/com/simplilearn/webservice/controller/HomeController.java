@@ -36,13 +36,4 @@ public class HomeController {
 		response.put("message", "Request is completed Successfully.");
 		return response;
 	}
-
-	// error page mapping
-	@RequestMapping(value="/error",method=RequestMethod.GET)
-	@ResponseBody
-	public Map<String, String> errorMapping() {
-		response.put("status", "404");
-		response.put("message", "Requested page is not found.");
-		return response;
-	}
 }

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.simplilearn.webservice.exception.InvalidException;
+import com.simplilearn.webservice.exception.NotFoundException;
 import com.simplilearn.webservice.model.Product;
 
 @RestController
@@ -40,7 +42,7 @@ public class ProductController {
 				return product;
 			}
 		}
-		return null;
+		throw new NotFoundException("Product not found with given id "+id);
 	}
 
 	// Get one product by name
@@ -51,7 +53,7 @@ public class ProductController {
 				return product;
 			}
 		}
-		return null;
+		throw new NotFoundException("Product not found with given name '"+name +"'");
 	}
 
 	// Search products by name
@@ -62,17 +64,17 @@ public class ProductController {
 				return product;
 			}
 		}
-		return null;
+		throw new NotFoundException("Product not found with given name '"+name +"'");
 	}
 
 	// Add product to list
 	@PostMapping("/products")
-	public Product addOne(@RequestBody Product product) {
+	public Product addOne(@RequestBody(required=false) Product product) {
 		if (product != null) {
 			productList.add(product);
 			return product;
 		}
-		return null;
+		throw new InvalidException("Product can not be created , Required fileds missing");
 	}
 
 	// Update product to list
@@ -84,7 +86,7 @@ public class ProductController {
 				return productList.get(index);
 			}
 		}
-		return null;
+		throw new NotFoundException("Product not found with given id "+product.getId());
 	}
 
 	// Delete product from list
@@ -99,7 +101,7 @@ public class ProductController {
 				return removed;
 			}
 		}
-		return null;
+		throw new NotFoundException("Product not found with given id "+id);
 	}
 
 	public void addDefaults() {

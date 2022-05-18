@@ -1,10 +1,9 @@
 package com.simplilearn.webservice.controller;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import javax.websocket.server.PathParam;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,18 +17,21 @@ import org.springframework.web.bind.annotation.RestController;
 import com.simplilearn.webservice.exception.InvalidException;
 import com.simplilearn.webservice.exception.NotFoundException;
 import com.simplilearn.webservice.model.Product;
+import com.simplilearn.webservice.repository.ProductRepository;
 
 @RestController
 @RequestMapping("/api")
 public class ProductController {
 
-	List<Product> productList = new ArrayList<Product>();
+	@Autowired
+	ProductRepository productRepository;
 
 	// Get all products list
 	@GetMapping("/products")
 	public List<Product> getAll() {
+		List<Product> productList = productRepository.findAll();
 		if (productList.isEmpty()) {
-			addDefaults();
+			throw new NotFoundException("Product list empty, No product found");
 		}
 		return productList;
 	}
@@ -37,42 +39,58 @@ public class ProductController {
 	// Get one product by id
 	@GetMapping("/products/{id}")
 	public Product getOne(@PathVariable("id") int id) {
-		for (Product product : productList) {
-			if (product.getId() == id) {
-				return product;
-			}
+		Optional<Product> productData = productRepository.findById(id);
+		if (productData.isPresent()) {
+			return productData.get();
 		}
-		throw new NotFoundException("Product not found with given id "+id);
+		throw new NotFoundException("Product not found with given id " + id);
 	}
 
 	// Get one product by name
 	@GetMapping("/product")
-	public Product getOne(@RequestParam("name") String name) {
-		for (Product product : productList) {
-			if (product.getName().equals(name)) {
-				return product;
-			}
+	public List<Product> getOne(@RequestParam("name") String name) {
+		List<Product> productData = productRepository.findByName(name);
+		if (!productData.isEmpty()) {
+			return productData;
 		}
-		throw new NotFoundException("Product not found with given name '"+name +"'");
+		throw new NotFoundException("Product not found with given name '" + name + "'");
+	}
+
+	// Get one product by price
+	@GetMapping("/product/price")
+	public List<Product> getOne(@RequestParam("price") double price) {
+		List<Product> productData = productRepository.findByPrice(price);
+		if (!productData.isEmpty()) {
+			return productData;
+		}
+		throw new NotFoundException("Product not found with given price '" + price + "'");
+	}
+
+	// Get one product by available
+	@GetMapping("/product/available")
+	public List<Product> getOne(@RequestParam("available") boolean available) {
+		List<Product> productData = productRepository.findByAvailable(available);
+		if (!productData.isEmpty()) {
+			return productData;
+		}
+		throw new NotFoundException("Product not found with given available status '" + available + "'");
 	}
 
 	// Search products by name
 	@GetMapping("/product/search")
-	public Product searchOne(@RequestParam("name") String name) {
-		for (Product product : productList) {
-			if (product.getName().contains(name)) {
-				return product;
-			}
+	public List<Product> searchOne(@RequestParam("name") String name) {
+		List<Product> productData = productRepository.searchByName(name);
+		if (!productData.isEmpty()) {
+			return productData;
 		}
-		throw new NotFoundException("Product not found with given name '"+name +"'");
+		throw new NotFoundException("Product not found with given name '" + name + "'");
 	}
 
 	// Add product to list
 	@PostMapping("/products")
-	public Product addOne(@RequestBody(required=false) Product product) {
+	public Product addOne(@RequestBody(required = false) Product product) {
 		if (product != null) {
-			productList.add(product);
-			return product;
+			return productRepository.save(product);
 		}
 		throw new InvalidException("Product can not be created , Required fileds missing");
 	}
@@ -80,35 +98,21 @@ public class ProductController {
 	// Update product to list
 	@PutMapping("/products")
 	public Product updateOne(@RequestBody Product product) {
-		for (int index = 0; index < productList.size(); index++) {
-			if (product.getId() == productList.get(index).getId()) {
-				productList.set(index, product);
-				return productList.get(index);
-			}
+		Optional<Product> productData = productRepository.findById(product.getId());
+		if (productData.isPresent()) {
+			return productRepository.save(product);
 		}
-		throw new NotFoundException("Product not found with given id "+product.getId());
+		throw new NotFoundException("Product not found with given id " + product.getId());
 	}
 
 	// Delete product from list
 	@DeleteMapping("/products/{id}")
 	public Product deleteOne(@PathVariable("id") int id) {
-		for (int index = 0; index < productList.size(); index++) {
-			if (id == productList.get(index).getId()) {
-				//return removed record
-				Product removed = productList.get(index);
-				// remove data from list
-				productList.remove(index);
-				return removed;
-			}
+		Optional<Product> productData = productRepository.findById(id);
+		if (productData.isPresent()) {
+			productRepository.delete(productData.get());
+			return productData.get();
 		}
-		throw new NotFoundException("Product not found with given id "+id);
-	}
-
-	public void addDefaults() {
-		productList.add(new Product(10001, "Apple Mac book", "Apple", "It is a laptop", 5645.45, true));
-		productList.add(new Product(10002, "HP RySon book", "HP", "It is a laptop", 1645.45, false));
-		productList.add(new Product(10003, "Dell Inspiron book", "Dell", "It is a laptop", 3645.45, true));
-		productList.add(new Product(10004, "Lenovo Ideapad book", "Lenovo", "It is a laptop", 2699.45, true));
-		productList.add(new Product(10005, "Acer Gamming book", "Acer", "It is a laptop", 5599.45, false));
+		throw new NotFoundException("Product not found with given id " + id);
 	}
 }
